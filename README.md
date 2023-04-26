@@ -19,4 +19,4 @@ The time library was used to pause the code execution for a few seconds. This en
 ### Random
 Random was primarily used to generate random values throughout the project.
 
-Please make sure to have these libraries installed before running the code. You can do so by running `pip install <library-name>` in your terminal/command prompt.
+Please make sure to have these libraries and tools installed before running the code. You can do so by running `pip install <library-name>` in your terminal/command prompt.
