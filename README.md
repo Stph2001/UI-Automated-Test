@@ -1,8 +1,11 @@
 # UI-Automated-Test
 
-## Libraries used in this project
+## Libraries and Tools used in this project
 
-This project relies on the following Python libraries:
+This project relies on the following Python libraries and tools:
+
+### WebDriver Chrome
+I used this test automation tool to allow me to control and manipulate an instance of Chrome from Python code.
 
 ### Selenium
 Selenium was used to automate a test case in the respective web browser. It allowed the simulation of various actions, such as clicking buttons, filling out forms, navigating between sections, and extracting data from the page.
