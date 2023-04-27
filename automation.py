@@ -1,6 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support.ui import Select, WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from faker import Faker
 import random
 import time
@@ -8,6 +9,9 @@ import time
 # Create a new instance of the browser driver
 driver = webdriver.Chrome()
 driver.maximize_window()
+
+# Create a explicit wait 
+wait = WebDriverWait(driver, 10)
 
 # Open the home page
 driver.get("https://demo.evershop.io/")
@@ -57,7 +61,7 @@ for i in range(3):
     # Choose as many as you want at random
     quantity_input = driver.find_element(by=By.NAME, value="qty")
     quantity_input.clear()
-    quantity_input.send_keys(random.randint(1, 5))
+    quantity_input.send_keys(random.randint(1, 3))
 
     # Save the two variant lists to choose one option per list
     variant_list = driver.find_elements(by=By.CLASS_NAME, value="variant-option-list")
@@ -87,9 +91,6 @@ mini_cart_button.click()
 checkout_button = driver.find_element(by=By.XPATH, value="//span[text()='CHECKOUT']")
 checkout_button.click()
 
-# Wait 1 second
-time.sleep(1)
-
 # Create dummy shipping address data for a US user
 phone_number = faker.phone_number()
 address = faker.street_address()
@@ -98,7 +99,7 @@ zip_code = faker.zipcode()
 state = faker.state()
 
 # Fill the shipping address form
-name_input = driver.find_element(by=By.NAME, value="address[full_name]")
+name_input = wait.until(EC.element_to_be_clickable((By.NAME, "address[full_name]")))
 name_input.send_keys(name)
 
 phone_number_input = driver.find_element(by=By.NAME, value="address[telephone]")
@@ -121,11 +122,8 @@ province_combo_box.select_by_visible_text(state)
 zip_code_input = driver.find_element(by=By.NAME, value="address[postcode]")
 zip_code_input.send_keys(zip_code)
 
-# Wait 3 seconds
-time.sleep(3)
-
 # Click a random shipping method
-shipping_method_list = driver.find_elements(by=By.CLASS_NAME, value="radio-unchecked")
+shipping_method_list = wait.until(EC.visibility_of_all_elements_located((By.CLASS_NAME, "radio-unchecked")))
 shipping_method = random.choice(shipping_method_list)
 shipping_method.click()
 
@@ -133,18 +131,15 @@ shipping_method.click()
 payment_button = driver.find_element(by=By.XPATH, value="//span[text()='Continue to payment']")
 payment_button.click()
 
-# Wait 1 second
-time.sleep(1)
-
-# Choose the payment method with Visa
-payment_method_list = driver.find_elements(by=By.XPATH, value="//*[local-name()='svg' and @xmlns='http://www.w3.org/2000/svg']")
-payment_method_list[4].click()
-
 # Wait 2 seconds
 time.sleep(2)
 
+# Choose the payment method with Visa
+payment_method_list = wait.until(EC.visibility_of_all_elements_located((By.XPATH, "//*[local-name()='svg' and @xmlns='http://www.w3.org/2000/svg']")))
+payment_method_list[4].click()
+
 # Get valid card details
-card_info_list = driver.find_elements(by=By.XPATH, value="//div[@class='text-sm text-gray-600']")
+card_info_list = wait.until(EC.visibility_of_all_elements_located((By.XPATH, "//div[@class='text-sm text-gray-600']")))
 
 for card_info in card_info_list:
     if 'Test card number' in card_info.text:
@@ -155,7 +150,7 @@ for card_info in card_info_list:
         card_cvc = card_info.text.split(': ')[1]
 
 # Switch to the frame of the card form to be able to complete it
-card_iframe = driver.find_element(by=By.XPATH, value="//iframe[@title='Secure card payment input frame']")
+card_iframe = driver.find_elements(by=By.TAG_NAME, value="iframe")[0]
 driver.switch_to.frame(card_iframe)
 
 # Fill the card form
@@ -175,5 +170,66 @@ driver.switch_to.default_content()
 place_order_button = driver.find_element(by=By.XPATH, value="//span[text()='Place Order']")
 place_order_button.click()
 
+# Compare detail of the order with the expected data
+
+# Get Contact Data
+contact_info = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[text()='Contact information']")))
+email_info = contact_info.find_element(by=By.XPATH, value="following-sibling::div[@class='text-textSubdued']").text
+
+# Get Payment Method Data
+payment_info = driver.find_element(by=By.XPATH, value="//div[text()='Payment Method']")
+payment_method_info = payment_info.find_element(by=By.XPATH, value="following-sibling::div[@class='text-textSubdued']").text
+
+# Create a function for address data
+def get_address_info(element):
+    name = element.find_element(by=By.CLASS_NAME, value="full-name").text
+    address = element.find_element(by=By.CLASS_NAME, value="address-one").text
+    phone_number = element.find_element(by=By.CLASS_NAME, value="telephone").text
+
+    address_more_info = element.find_element(by=By.CLASS_NAME, value="city-province-postcode")
+    zip_code = address_more_info.find_element(by=By.XPATH, value="./div[1]").text.split(', ')[0]
+    city = address_more_info.find_element(by=By.XPATH, value="./div[1]").text.split(', ')[1]
+    state = address_more_info.find_element(by=By.XPATH, value="./div[2]").text.split(', ')[0]
+    country = address_more_info.find_element(by=By.XPATH, value="./div[2]").text.split(', ')[1]
+
+    return name, address, phone_number, zip_code, city, state, country
+
+# Get Shipping Address Data
+shipping_info = driver.find_element(by=By.XPATH, value="//div[text()='Shipping Address']/following-sibling::div[@class='text-textSubdued']")
+name_info, address_info, phone_number_info, zip_code_info, city_info, state_info, country_info = get_address_info(shipping_info)
+
+# Get Billing Address Data
+billing_info = driver.find_element(by=By.XPATH, value="//div[text()='Billing Address']/following-sibling::div[@class='text-textSubdued']")
+name_info2, address_info2, phone_number_info2, zip_code_info2, city_info2, state_info2, country_info2 = get_address_info(billing_info)
+
+# Get the number of unique products
+summary_info = driver.find_element(by=By.CLASS_NAME, value="summary-row")
+n_product_info = summary_info.find_element(by=By.XPATH, value="./div/div[1]").text.split(" ")[0]
+
+# Verify the data
+assert email_info == email, "The email is incorrect"
+assert payment_method_info == "Credit Card", "The payment method is incorrect"
+
+assert name_info == name, "The name is incorrect"
+assert address_info == address, "The address is incorrect"
+assert phone_number_info == phone_number, "The phone number is incorrect"
+assert zip_code_info == zip_code, "The zip code is incorrect"
+assert city_info == city, "The city is incorrect"
+assert state_info == state, "The state is incorrect"
+assert country_info == 'United States', "The country is incorrect"
+
+assert name_info2 == name, "The name is incorrect"
+assert address_info2 == address, "The address is incorrect"
+assert phone_number_info2 == phone_number, "The phone number is incorrect"
+assert zip_code_info2 == zip_code, "The zip code is incorrect"
+assert city_info2 == city, "The city is incorrect"
+assert state_info2 == state, "The state is incorrect"
+assert country_info2 == 'United States', "The country is incorrect"
+
+assert int(n_product_info) == 3, "The number of unique products is incorrect"
+
+print("The purchase details are correct")
+
 # Close the page
+time.sleep(100)
 driver.quit()
