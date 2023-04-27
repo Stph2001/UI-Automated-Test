@@ -1,4 +1,26 @@
-# UI-Automated-Test
+# Task - UI Automated test using Selenium WebDriver
+
+What do you need to do?
+Create automated tests using the following test case:
+  
+Sign in 
+Preconditions
+* Generated customer with all customer data
+Test steps
+* Open [Home page](https://demo.evershop.io/ [demo.evershop.io])
+* Click *Sign in* button
+* Fill *Email address* and *Password* to create an account
+* Click *Create an account*
+* Log in
+* Select 3 differents products and add it to the cart with different quantities
+* Go to Checkout page and click on Checkout
+* Fill the shipping address and submit
+* Click on success to get correct card information
+* Fill payment information
+* Click Place Order
+
+Assertions
+* Verify Order created successful with the correct information Contact, Payment, Shipping Address, Billing Address and Items
 
 ## Libraries and Tools used in this project
 
